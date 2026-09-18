@@ -1,0 +1,65 @@
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: travel-tours-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DATABASE:-travel_tours}
+      POSTGRES_USER: ${POSTGRES_USERNAME:-travel_tours}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-travel_tours}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - travel-tours-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USERNAME:-travel_tours} -d ${POSTGRES_DATABASE:-travel_tours}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - travel-tours-net
+
+  backend:
+    build:
+      context: ./travel-tours-backend
+    image: travel-tours-backend:local
+    container_name: travel-tours-backend
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_DATABASE: ${POSTGRES_DATABASE:-travel_tours}
+      POSTGRES_USERNAME: ${POSTGRES_USERNAME:-travel_tours}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-travel_tours}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - travel-tours-net
+
+  frontend:
+    build:
+      context: ./travel-tours-frontend
+    image: travel-tours-frontend:local
+    container_name: travel-tours-frontend
+    restart: unless-stopped
+    environment:
+      API_URL: ${API_URL:-http://localhost:8080/api}
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - travel-tours-net
+
+volumes:
+  travel-tours-db-data:
+
+networks:
+  travel-tours-net:
+    driver: bridge
