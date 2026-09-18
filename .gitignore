@@ -1,0 +1,21 @@
+# Environment files with real secrets
+.env
+.env.*.local
+
+# Java / Maven (backend)
+travel-tours-backend/target/
+travel-tours-backend/.mvn/wrapper/maven-wrapper.jar
+
+# Node (frontend)
+travel-tours-frontend/node_modules/
+travel-tours-frontend/dist/
+travel-tours-frontend/dist-ssr/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# Logs
+*.log
