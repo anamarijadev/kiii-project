@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: travel-tours-frontend-config
+  namespace: travel-tours
+data:
+  API_URL: http://travel-tours.local/api
