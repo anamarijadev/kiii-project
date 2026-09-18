@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: travel-tours-backend
+  namespace: travel-tours
+  labels:
+    app: travel-tours-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: travel-tours-backend
+  template:
+    metadata:
+      labels:
+        app: travel-tours-backend
+    spec:
+      containers:
+        - name: backend
+          image: anamarijamileska/travel-tours-backend:latest
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: travel-tours-backend-config
+            - secretRef:
+                name: travel-tours-backend-secret
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 18
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 150m
+              memory: 256Mi
+            limits:
+              cpu: 750m
+              memory: 512Mi
