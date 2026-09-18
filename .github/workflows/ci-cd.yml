@@ -7,6 +7,10 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+env:
+  DOCKERHUB_BACKEND_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/travel-tours-backend
+  DOCKERHUB_FRONTEND_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/travel-tours-frontend
+
 jobs:
   backend-build:
     name: Backend - build & package
@@ -52,3 +56,42 @@ jobs:
       - name: Type-check & build
         working-directory: ./travel-tours-frontend
         run: npm run build
+
+  docker-build-push:
+    name: Docker - build & push images
+    needs: [ backend-build, frontend-build ]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build & push backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./travel-tours-backend
+          push: true
+          tags: |
+            ${{ env.DOCKERHUB_BACKEND_IMAGE }}:latest
+            ${{ env.DOCKERHUB_BACKEND_IMAGE }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build & push frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./travel-tours-frontend
+          push: true
+          tags: |
+            ${{ env.DOCKERHUB_FRONTEND_IMAGE }}:latest
+            ${{ env.DOCKERHUB_FRONTEND_IMAGE }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
