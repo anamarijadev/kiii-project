@@ -1,6 +1,8 @@
 # Environment files with real secrets
 .env
 .env.*.local
+.env.production
+.env.development
 
 # Java / Maven (backend)
 travel-tours-backend/target/
