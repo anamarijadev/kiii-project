@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: travel-tours-db
+  namespace: travel-tours
+spec:
+  serviceName: travel-tours-db
+  replicas: 1
+  selector:
+    matchLabels:
+      app: travel-tours-db
+  template:
+      metadata:
+        labels:
+          app: travel-tours-db
+      spec:
+        containers:
+          - name: postgres
+            image: postgres:17-alpine
+            ports:
+              - containerPort: 5432
+                name: postgres
+            envFrom:
+              - configMapRef:
+                  name: travel-tours-db-config
+              - secretRef:
+                  name: travel-tours-db-secret
+            volumeMounts:
+              - mountPath: /var/lib/postgresql/data
+                name: db-data
+            readinessProbe:
+              exec:
+                command: [ "pg_isready", "-U", "traveltours", "-d", "travel_tours" ]
+              initialDelaySeconds: 5
+              periodSeconds: 5
+              timeoutSeconds: 3
+            livenessProbe:
+              exec:
+                command: [ "pg_isready", "-U", "traveltours", "-d", "travel_tours" ]
+              initialDelaySeconds: 15
+              periodSeconds: 10
+              timeoutSeconds: 3
+            resources:
+              requests:
+                cpu: 100m
+                memory: 256Mi
+              limits:
+                cpu: 500m
+                memory: 512Mi
+  volumeClaimTemplates:
+    - metadata:
+        name: db-data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 1Gi
